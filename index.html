@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milky Wave POS - RawBT Mode</title>
+    <title>Milky Wave POS - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -13,23 +13,6 @@
         
         .input-style { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; transition: 0.3s; }
         .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
-
-        /* CSS KHUSUS CETAK (RawBT) */
-        @media print {
-            body * { visibility: hidden; }
-            #area-cetak, #area-cetak * { visibility: visible; }
-            #area-cetak { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 48mm; 
-                padding: 0; 
-                margin: 0; 
-                font-family: monospace; 
-                color: #000;
-            }
-            nav, button, .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body class="bg-slate-50 transition-colors duration-300" id="appBody">
@@ -52,7 +35,7 @@
                     <div id="grid-etalase" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-xl border dark:border-slate-700 h-fit lg:w-80 sticky top-24">
-                    <h3 class="font-black text-sm mb-4 dark:text-white uppercase">Keranjang</h3>
+                    <h3 class="font-black text-sm mb-4 dark:text-white uppercase">Order</h3>
                     <div id="cart-items" class="space-y-2 mb-6 max-h-64 overflow-y-auto pr-2"></div>
                     <div class="border-t-2 border-dashed dark:border-slate-700 pt-4">
                         <div class="flex justify-between font-black text-2xl mb-5 dark:text-white">
@@ -89,32 +72,16 @@
 
         <div id="tab-profil" class="tab-content text-center py-6">
             <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border dark:border-slate-700 max-w-sm mx-auto">
-                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🌙</div>
-                <h2 class="text-xl font-black mb-6 dark:text-white uppercase">Pengaturan Tema</h2>
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🎨</div>
+                <h2 class="text-xl font-black mb-6 dark:text-white uppercase">Tampilan</h2>
                 <div class="flex gap-2">
-                    <button onclick="gantiTema('light')" class="flex-1 border p-4 rounded-2xl dark:text-white font-bold text-[10px] hover:bg-slate-50 transition">☀️ LIGHT</button>
-                    <button onclick="gantiTema('dark')" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold text-[10px] hover:bg-slate-800 transition">🌙 DARK</button>
+                    <button onclick="gantiTema('light')" class="flex-1 border p-4 rounded-2xl dark:text-white font-bold text-[10px]">☀️ TERANG</button>
+                    <button onclick="gantiTema('dark')" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold text-[10px]">🌙 GELAP</button>
                 </div>
-                <p class="text-[9px] text-slate-400 mt-10 font-bold uppercase tracking-widest">Printer: RPP02N (via RawBT)</p>
+                <p class="text-[9px] text-slate-400 mt-10 font-bold uppercase tracking-widest italic">Hubungkan Printer RPP02N di Aplikasi RawBT</p>
             </div>
         </div>
     </main>
-
-    <div id="area-cetak" style="display: none;">
-        <center>
-            <strong style="font-size: 11pt;">Pakan Burung kembang Arum</strong><br>
-            <span style="font-size: 8pt;">Salatiga, Jawa Tengah</span><br>
-            -------------------------------
-        </center>
-        <div id="isi-nota" style="font-size: 9pt; line-height: 1.2;"></div>
-        <center>-------------------------------</center>
-        <div id="total-nota" style="font-size: 10pt; font-weight: bold;"></div>
-        <center>
-            <br>
-            <span style="font-size: 8pt;">Terima Kasih!<br>Semoga Berkunjung lagi </span>
-            <br><br><br><br>
-        </center>
-    </div>
 
     <script src="script.js"></script>
 </body>
