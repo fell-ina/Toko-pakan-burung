@@ -1,34 +1,40 @@
-// VARIABEL GLOBAL
+// CONFIG & DB
 let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
 let dbHistory = JSON.parse(localStorage.getItem('dbHistory')) || [];
 let keranjang = [];
 let filterKategori = 'Semua';
-let printerCharacteristic = null; // Koneksi Bluetooth
+let printerCharacteristic = null; // Untuk Bluetooth
 
 // ==========================================
-// KONEKSI BLUETOOTH (WEB API)
+// KONEKSI PRINTER
 // ==========================================
 
+// 1. KONEKSI BLUETOOTH
 async function hubungkanBluetooth() {
     try {
         const device = await navigator.bluetooth.requestDevice({
-            filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
-            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+            acceptAllDevices: true,
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] 
         });
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
         printerCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
         
-        document.getElementById('bt-status').innerText = "✅ PRINTER TERHUBUNG: " + device.name;
-        document.getElementById('bt-status').className = "bg-green-100 text-green-800 text-[10px] text-center py-1 font-bold";
-        alert("Printer " + device.name + " siap digunakan!");
+        updateStatus("🟢 Bluetooth Terhubung: " + device.name);
+        alert("Printer Siap!");
     } catch (e) {
-        alert("Gagal konek Bluetooth: " + e.message);
+        alert("Bluetooth Gagal: " + e.message);
     }
 }
 
+function updateStatus(txt) {
+    const el = document.getElementById('conn-status');
+    el.innerText = txt;
+    el.className = "bg-blue-600 text-white text-[10px] text-center py-1 font-bold";
+}
+
 // ==========================================
-// KASIR & PRINT LOGIC
+// CORE LOGIC KASIR
 // ==========================================
 
 function openTab(id) {
@@ -46,21 +52,21 @@ function renderEtalase() {
     const chips = document.getElementById('category-chips');
     grid.innerHTML = '';
     
-    let kats = ['Semua', ...new Set(dbBarang.map(b => b.kategori))];
+    let kats = ['Semua', ...new Set(dbBarang.map(b => b.kategori || "Umum"))];
     chips.innerHTML = kats.map(k => `
-        <button onclick="setFilter('${k}')" class="px-4 py-1.5 rounded-full border text-xs whitespace-nowrap transition ${filterKategori === k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600 text-slate-600'}">
+        <button onclick="setFilter('${k}')" class="px-5 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition ${filterKategori === k ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600 text-slate-500'}">
             ${k}
         </button>
     `).join('');
 
     dbBarang.filter(b => filterKategori === 'Semua' || b.kategori === filterKategori).forEach(b => {
         grid.innerHTML += `
-            <div onclick="tambahKeKeranjang(${b.id})" class="bg-white dark:bg-slate-800 p-2 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md active:scale-95 transition">
-                <div class="h-24 bg-slate-50 dark:bg-slate-700 rounded-xl overflow-hidden mb-2">
+            <div onclick="tambahKeKeranjang(${b.id})" class="bg-white dark:bg-slate-800 p-2 rounded-[1.5rem] border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-lg active:scale-95 transition">
+                <div class="h-24 bg-slate-50 dark:bg-slate-700 rounded-2xl overflow-hidden mb-3">
                     ${b.foto ? `<img src="${b.foto}" class="w-full h-full object-cover">` : ''}
                 </div>
-                <p class="font-bold text-xs truncate dark:text-white">${b.nama}</p>
-                <p class="text-[10px] text-blue-500 font-bold">Rp ${b.harga.toLocaleString()}</p>
+                <p class="font-black text-[11px] truncate dark:text-white px-1 uppercase">${b.nama}</p>
+                <p class="text-[10px] text-blue-500 font-black px-1 pb-1">Rp ${b.harga.toLocaleString()}</p>
             </div>
         `;
     });
@@ -71,8 +77,7 @@ function setFilter(k) { filterKategori = k; renderEtalase(); }
 function tambahKeKeranjang(id) {
     const item = dbBarang.find(b => b.id === id);
     const ada = keranjang.find(k => k.id === id);
-    if(ada) ada.qty++;
-    else keranjang.push({ ...item, qty: 1 });
+    if(ada) ada.qty++; else keranjang.push({ ...item, qty: 1 });
     renderCart();
 }
 
@@ -83,15 +88,15 @@ function renderCart() {
     keranjang.forEach((item, idx) => {
         total += (item.harga * item.qty);
         list.innerHTML += `
-            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-2.5 rounded-xl border dark:border-slate-600">
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 p-3 rounded-2xl border dark:border-slate-600">
                 <div class="flex-1">
-                    <p class="font-bold text-xs dark:text-white">${item.nama}</p>
-                    <p class="text-[9px] text-slate-400">Rp ${item.harga.toLocaleString()} x ${item.qty}</p>
+                    <p class="font-black text-[10px] dark:text-white uppercase">${item.nama}</p>
+                    <p class="text-[9px] text-slate-400 font-bold">@ ${item.harga.toLocaleString()}</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="ubahQty(${idx}, -1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded-lg shadow text-xs">-</button>
-                    <span class="font-bold text-xs dark:text-white w-4 text-center">${item.qty}</span>
-                    <button onclick="ubahQty(${idx}, 1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded-lg shadow text-xs">+</button>
+                <div class="flex items-center gap-3">
+                    <button onclick="ubahQty(${idx}, -1)" class="w-7 h-7 bg-white dark:bg-slate-600 rounded-full shadow-sm font-bold">-</button>
+                    <span class="font-black text-xs dark:text-white w-4 text-center">${item.qty}</span>
+                    <button onclick="ubahQty(${idx}, 1)" class="w-7 h-7 bg-white dark:bg-slate-600 rounded-full shadow-sm font-bold">+</button>
                 </div>
             </div>
         `;
@@ -105,85 +110,89 @@ function ubahQty(i, n) {
     renderCart();
 }
 
-// FUNGSI PRINT UTAMA
+// ==========================================
+// PROSES CETAK (BLUETOOTH & WIFI)
+// ==========================================
+
 async function prosesCheckout() {
-    if(keranjang.length === 0) return alert("Keranjang kosong!");
+    if(keranjang.length === 0) return alert("Keranjang masih kosong!");
     
+    const ipPrinter = document.getElementById('ip-printer').value;
     const total = keranjang.reduce((a, b) => a + (b.harga * b.qty), 0);
     const tgl = new Date();
     const waktuStr = `${tgl.toLocaleDateString('id-ID')} ${tgl.getHours()}:${tgl.getMinutes()}`;
 
-    // 1. SIMPAN KE HISTORY
-    dbHistory.push({ waktu: waktuStr, total: total, items: [...keranjang] });
-    localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
+    // 1. GENERATE ESC/POS DATA
+    let encoder = new EscPosEncoder();
+    let result = encoder
+        .initialize()
+        .align('center')
+        .bold(true).line('MILKY WAVE').bold(false)
+        .line('Salatiga, Indonesia')
+        .line('--------------------------------')
+        .align('left')
+        .line('Waktu: ' + waktuStr)
+        .line('--------------------------------');
 
-    // 2. CEK KONEKSI BLUETOOTH
-    if (!printerCharacteristic) {
-        alert("Printer belum konek! Klik Setting -> Hubungkan Bluetooth. Nota hanya disimpan di history.");
-        return;
-    }
+    keranjang.forEach(item => {
+        let line = item.nama + ' x' + item.qty;
+        let price = (item.harga * item.qty).toLocaleString();
+        let spaces = 32 - line.length - price.length;
+        result.line(line + " ".repeat(Math.max(1, spaces)) + price);
+    });
 
-    // 3. ENCODE UNTUK PRINTER (TEKS SAJA TANPA FOTO)
+    result.line('--------------------------------')
+        .bold(true)
+        .line('TOTAL' + " ".repeat(32 - 5 - total.toLocaleString().length) + total.toLocaleString())
+        .bold(false)
+        .align('center')
+        .line('\nTerima Kasih\nSelamat Menikmati!\n\n\n\n');
+
+    const byteData = result.encode();
+
+    // 2. KIRIM KE PRINTER
     try {
-        let encoder = new EscPosEncoder();
-        let result = encoder
-            .initialize()
-            .align('center')
-            .bold(true)
-            .line('MILKY WAVE')
-            .bold(false)
-            .line('Salatiga, Jawa Tengah')
-            .line('--------------------------------')
-            .align('left')
-            .line('Tgl: ' + waktuStr);
-
-        keranjang.forEach(item => {
-            // Kalkulasi spasi agar rapi rata kanan
-            let line = item.nama + ' x' + item.qty;
-            let price = (item.harga * item.qty).toLocaleString();
-            let spaces = 32 - line.length - price.length;
-            result.line(line + " ".repeat(Math.max(1, spaces)) + price);
-        });
-
-        result.line('--------------------------------')
-            .bold(true)
-            .line('TOTAL: ' + " ".repeat(32 - 7 - total.toLocaleString().length) + total.toLocaleString())
-            .bold(false)
-            .align('center')
-            .line('\nTerima Kasih\n\n\n\n'); // Spasi agar kertas keluar
-
-        const data = result.encode();
-        
-        // Kirim data per 20 byte (aturan bluetooth)
-        for (let i = 0; i < data.length; i += 20) {
-            await printerCharacteristic.writeValue(data.slice(i, i + 20));
+        // Opsi A: WiFi (Jika IP diisi)
+        if (ipPrinter && ipPrinter.length > 7) {
+            await fetch(`http://${ipPrinter}:9100`, { method: 'POST', mode: 'no-cors', body: byteData });
+        } 
+        // Opsi B: Bluetooth
+        else if (printerCharacteristic) {
+            for (let i = 0; i < byteData.length; i += 20) {
+                await printerCharacteristic.writeValue(byteData.slice(i, i + 20));
+            }
+        } 
+        else {
+            alert("Printer tidak terdeteksi! Nota hanya disimpan di riwayat.");
+            window.print(); // Fallback ke sistem browser
         }
 
-        alert("Nota Berhasil Dicetak!");
+        // Simpan & Reset
+        dbHistory.push({ waktu: waktuStr, total: total, items: [...keranjang] });
+        localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
         keranjang = [];
         renderCart();
+        alert("Nota Berhasil!");
     } catch (e) {
-        console.error(e);
-        alert("Gagal cetak Bluetooth. Pastikan printer nyala.");
+        alert("Gagal Cetak: " + e.message);
     }
 }
 
 // ==========================================
-// MENU & HISTORY (SIMPLIFIED)
+// MANAGEMENT MENU & HISTORY
 // ==========================================
 
 function simpanBarang() {
     const nama = document.getElementById('inp-nama').value;
     const harga = parseInt(document.getElementById('inp-harga').value);
-    const satuan = document.getElementById('inp-satuan').value;
     const kategori = document.getElementById('inp-kategori').value || "Umum";
     const fotoFile = document.getElementById('inp-foto').files[0];
     const idEdit = document.getElementById('edit-id').value;
 
-    if(!nama || !harga) return alert("Isi data barang!");
+    if(!nama || !harga) return alert("Lengkapi data produk!");
 
     const action = (img) => {
-        const itemData = { id: idEdit ? parseInt(idEdit) : Date.now(), nama, harga, satuan, kategori, foto: img };
+        const itemData = { id: idEdit ? parseInt(idEdit) : Date.now(), nama, harga, kategori, foto: img };
         if(idEdit) {
             const idx = dbBarang.findIndex(b => b.id === parseInt(idEdit));
             dbBarang[idx] = itemData;
@@ -210,18 +219,18 @@ function renderMenu() {
     }, {});
 
     for(const kat in grouped) {
-        let html = `<div class="bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 overflow-hidden shadow-sm">
-            <div class="bg-slate-50 dark:bg-slate-700 px-4 py-2 font-bold text-xs text-blue-600 uppercase">${kat}</div>
+        let html = `<div class="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 overflow-hidden shadow-sm">
+            <div class="bg-slate-50 dark:bg-slate-700 px-5 py-3 font-black text-[10px] text-blue-600 uppercase tracking-widest">${kat}</div>
             <div class="divide-y dark:divide-slate-700">`;
         grouped[kat].forEach(item => {
             html += `<div class="flex justify-between items-center p-4">
-                <div class="flex items-center gap-3">
-                    <span class="font-bold dark:text-white text-sm">${item.nama}</span>
-                    <span class="text-[10px] text-slate-400">Rp ${item.harga.toLocaleString()}</span>
+                <div class="flex items-center gap-4">
+                    <span class="font-black dark:text-white text-xs uppercase">${item.nama}</span>
+                    <span class="text-[10px] text-slate-400 font-bold">Rp ${item.harga.toLocaleString()}</span>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="prepareEditMenu(${item.id})" class="text-amber-500 text-sm">✏️</button>
-                    <button onclick="hapusMenu(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                <div class="flex gap-4">
+                    <button onclick="prepareEditMenu(${item.id})" class="text-amber-500">✏️</button>
+                    <button onclick="hapusMenu(${item.id})" class="text-red-500">🗑️</button>
                 </div>
             </div>`;
         });
@@ -235,9 +244,9 @@ function prepareEditMenu(id) {
     document.getElementById('inp-nama').value = item.nama;
     document.getElementById('inp-harga').value = item.harga;
     document.getElementById('inp-kategori').value = item.kategori;
-    document.getElementById('btn-simpan').innerText = "UPDATE";
+    document.getElementById('btn-simpan').innerText = "UPDATE PRODUK";
     document.getElementById('btn-batal').classList.remove('hidden');
-    window.scrollTo(0,0);
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function resetFormMenu() {
@@ -248,27 +257,35 @@ function resetFormMenu() {
     document.getElementById('btn-batal').classList.add('hidden');
 }
 
-function hapusMenu(id) { if(confirm("Hapus item?")) { dbBarang = dbBarang.filter(b => b.id !== id); localStorage.setItem('dbBarang', JSON.stringify(dbBarang)); renderMenu(); } }
+function hapusMenu(id) { if(confirm("Hapus produk?")) { dbBarang = dbBarang.filter(b => b.id !== id); localStorage.setItem('dbBarang', JSON.stringify(dbBarang)); renderMenu(); } }
 
 function renderHistory() {
     const list = document.getElementById('history-list'); list.innerHTML = '';
     dbHistory.slice().reverse().forEach((h, idx) => {
         const idAsli = dbHistory.length - 1 - idx;
-        list.innerHTML += `<div onclick="bukaModal(${idAsli})" class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex justify-between cursor-pointer">
-            <span class="text-xs dark:text-white">${h.waktu}</span>
-            <span class="font-bold text-green-600">Rp ${h.total.toLocaleString()}</span>
+        list.innerHTML += `<div onclick="bukaModal(${idAsli})" class="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 flex justify-between items-center cursor-pointer shadow-sm active:scale-95 transition">
+            <div class="flex flex-col">
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">${h.waktu}</span>
+                <span class="text-[10px] font-black dark:text-white">${h.items.length} ITEM TERJUAL</span>
+            </div>
+            <span class="font-black text-green-600 text-sm">Rp ${h.total.toLocaleString()}</span>
         </div>`;
     });
 }
 
 function bukaModal(idx) {
     const h = dbHistory[idx];
-    document.getElementById('modal-body').innerHTML = h.items.map(i => `<div>${i.nama} x ${i.qty} = Rp ${(i.harga*i.qty).toLocaleString()}</div>`).join('');
+    document.getElementById('modal-body').innerHTML = h.items.map(i => `
+        <div class="flex justify-between uppercase">
+            <span>${i.nama} x${i.qty}</span>
+            <span>${(i.harga*i.qty).toLocaleString()}</span>
+        </div>
+    `).join('');
     document.getElementById('modal-total').innerText = `Rp ${h.total.toLocaleString()}`;
     document.getElementById('modal-history').classList.replace('hidden', 'flex');
 }
 function tutupModal() { document.getElementById('modal-history').classList.replace('flex', 'hidden'); }
-function resetHistory() { if(confirm("Hapus semua?")) { dbHistory = []; localStorage.setItem('dbHistory', JSON.stringify(dbHistory)); renderHistory(); } }
+function resetHistory() { if(confirm("Hapus semua history?")) { dbHistory = []; localStorage.setItem('dbHistory', JSON.stringify(dbHistory)); renderHistory(); } }
 
 function gantiTema(t) {
     const b = document.getElementById('appBody');
@@ -276,6 +293,10 @@ function gantiTema(t) {
     localStorage.setItem('theme', t);
 }
 
-// START
+// SIMPAN IP OTOMATIS
+document.getElementById('ip-printer').value = localStorage.getItem('ip-printer') || "";
+document.getElementById('ip-printer').onchange = (e) => localStorage.setItem('ip-printer', e.target.value);
+
+// INIT
 if(localStorage.getItem('theme') === 'dark') gantiTema('dark');
 renderEtalase();
