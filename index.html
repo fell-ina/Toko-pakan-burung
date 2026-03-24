@@ -3,149 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kasir TOKO PAKAN KEMBANG ARUM</title>
+    <title>Milky Wave POS Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/esc-pos-encoder@2.1.0/dist/esc-pos-encoder.browser.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light" id="appBody">
+<body class="bg-slate-50 transition-colors duration-300" id="appBody">
 
-    <nav class="nav-bar shadow-md sticky top-0 z-50">
-        <div class="flex justify-around">
-            <button onclick="openTab('tab-print')" id="btn-tab-print" class="tab-btn active-tab">🖨️ Print</button>
+    <nav class="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-50 border-b dark:border-slate-700">
+        <div class="flex justify-around items-center max-w-5xl mx-auto">
+            <button onclick="openTab('tab-print')" id="btn-tab-print" class="tab-btn active-tab">🖨️ Kasir</button>
             <button onclick="openTab('tab-menu')" id="btn-tab-menu" class="tab-btn">📂 Menu</button>
             <button onclick="openTab('tab-history')" id="btn-tab-history" class="tab-btn">📜 History</button>
-            <button onclick="openTab('tab-profil')" id="btn-tab-profil" class="tab-btn">👤 Profil</button>
+            <button onclick="openTab('tab-profil')" id="btn-tab-profil" class="tab-btn">⚙️ Setting</button>
         </div>
     </nav>
+
+    <div id="bt-status" class="bg-amber-100 text-amber-800 text-[10px] text-center py-1 font-bold">
+        Printer Belum Terhubung. Silakan ke menu Setting.
+    </div>
 
     <main class="max-w-5xl mx-auto p-4 pb-24">
         
         <div id="tab-print" class="tab-content active">
-            <div class="flex flex-col md:flex-row gap-6">
+            <div class="flex flex-col lg:flex-row gap-6">
                 <div class="flex-1">
                     <div id="category-chips" class="flex gap-2 overflow-x-auto mb-4 pb-2"></div>
-                    <div id="grid-etalase" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    <div id="grid-etalase" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
                 </div>
-                <div class="cart-panel p-4 rounded-xl shadow-lg border h-fit md:w-80">
-                    <h3 class="font-bold border-b pb-2 mb-3">Pesanan Baru</h3>
-                    <div id="cart-items" class="space-y-3 mb-4 max-h-80 overflow-y-auto"></div>
-                    <div class="border-t pt-3">
-                        <div class="flex justify-between font-bold text-xl mb-4">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border dark:border-slate-700 h-fit lg:w-80 sticky top-24">
+                    <h3 class="font-bold border-b dark:border-slate-700 pb-2 mb-3 dark:text-white">Pesanan</h3>
+                    <div id="cart-items" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div>
+                    <div class="border-t dark:border-slate-700 pt-3">
+                        <div class="flex justify-between font-black text-xl mb-4 dark:text-white">
                             <span>Total</span>
                             <span id="total-cart">Rp 0</span>
                         </div>
-                        <button onclick="checkout()" class="btn-primary w-full py-4 rounded-xl font-bold shadow-lg">CETAK NOTA</button>
+                        <button onclick="prosesCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg transition transform active:scale-95">CETAK NOTA</button>
                     </div>
                 </div>
             </div>
         </div>
 
-      <div id="tab-menu" class="tab-content">
-    <div class="form-container p-6 rounded-xl shadow-sm mb-6 border border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <h3 id="form-title" class="font-bold text-lg mb-4 text-blue-600">Tambah Item Baru</h3>
-        <input type="hidden" id="edit-id"> <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="inp-nama" placeholder="Nama Barang" class="input-field">
-            <div class="flex gap-2">
-                <div class="relative flex-1">
-                    <span class="absolute left-3 top-3 text-gray-400">Rp</span>
-                    <input type="number" id="inp-harga" placeholder="Harga" class="input-field pl-10">
-                </div>
-                <select id="inp-satuan" class="input-field w-24">
-                    <option value="pcs">pcs</option>
-                    <option value="gr">gr</option>
-                    <option value="ons">ons</option>
-                    <option value="kg">kg</option>
-                </select>
-            </div>
-            <input type="text" id="inp-kategori" list="list-kat" placeholder="Kategori (Kosongkan jika tidak ada)" class="input-field">
-            <datalist id="list-kat"></datalist>
-            <input type="file" id="inp-foto" class="text-sm mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-            
-            <div class="flex gap-2 md:col-span-2">
-                <button id="btn-simpan" onclick="addItem()" class="btn-add flex-1 py-3 rounded-lg font-bold">SIMPAN BARANG</button>
-                <button id="btn-batal" onclick="resetForm()" class="hidden bg-gray-500 text-white px-6 py-3 rounded-lg font-bold">BATAL</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="menu-grouped-list" class="space-y-8">
-        </div>
-</div>
-                    <select id="inp-satuan" class="input-field">
-                        <option value="pcs">pcs</option>
-                        <option value="gr">gr</option>
-                        <option value="ons">ons</option>
-                        <option value="kg">kg</option>
-                    </select>
-                    <input type="text" id="inp-kategori" list="list-kat" placeholder="Kategori (Cth: Minuman)" class="input-field">
+        <div id="tab-menu" class="tab-content">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700 mb-8">
+                <h3 id="form-title" class="font-bold text-lg mb-4 text-blue-600">Tambah Item Baru</h3>
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="inp-nama" placeholder="Nama Barang" class="input-style">
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute left-3 top-3 text-gray-400">Rp</span>
+                            <input type="number" id="inp-harga" placeholder="Harga" class="input-style pl-10">
+                        </div>
+                        <select id="inp-satuan" class="input-style w-24">
+                            <option value="pcs">pcs</option>
+                            <option value="gr">gr</option>
+                            <option value="ons">ons</option>
+                            <option value="kg">kg</option>
+                        </select>
+                    </div>
+                    <input type="text" id="inp-kategori" list="list-kat" placeholder="Kategori (Minuman/Makanan)" class="input-style">
                     <datalist id="list-kat"></datalist>
-                    <input type="file" id="inp-foto" class="text-sm mt-2">
-                    <button onclick="addItem()" class="btn-add md:col-span-2 py-3 rounded-lg font-bold">SIMPAN BARANG</button>
+                    <input type="file" id="inp-foto" class="text-xs text-gray-400">
+                    <div class="flex gap-2 md:col-span-2">
+                        <button id="btn-simpan" onclick="simpanBarang()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold">SIMPAN</button>
+                        <button id="btn-batal" onclick="resetFormMenu()" class="hidden bg-gray-500 text-white px-6 py-3 rounded-xl font-bold">BATAL</button>
+                    </div>
                 </div>
             </div>
-            <div id="table-view" class="overflow-x-auto rounded-xl border">
-                <table class="w-full text-left bg-white dark-table">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="p-4">Item</th>
-                            <th class="p-4">Kategori</th>
-                            <th class="p-4">Harga</th>
-                            <th class="p-4">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="menu-items-table"></tbody>
-                </table>
-            </div>
+            <div id="menu-grouped-list" class="space-y-6"></div>
         </div>
 
         <div id="tab-history" class="tab-content">
-            <h2 class="text-2xl font-bold mb-6">Catatan Penjualan Lengkap</h2>
-            <div id="history-detail-list" class="space-y-4"></div>
-            <button onclick="clearHistory()" class="mt-10 text-red-500 underline text-sm">Reset History</button>
+            <h2 class="text-xl font-bold mb-4 dark:text-white">Riwayat Penjualan</h2>
+            <div id="history-list" class="space-y-3"></div>
+            <button onclick="resetHistory()" class="mt-10 text-red-500 text-xs underline">Hapus Permanen Semua History</button>
         </div>
 
-        <div id="tab-profil" class="tab-content text-center py-10">
-            <div class="card p-10 rounded-3xl shadow-xl border inline-block w-full max-w-md">
-                <h2 class="text-3xl font-black mb-2 text-blue-600">PAKAN BURUNG KEMBANG ARUM</h2>
-                <p class="text-gray-500 mb-8">System Ready for VSC TM-58V</p>
-                <div class="flex flex-col gap-4">
-                    <button onclick="setTheme('light')" class="theme-btn light-btn">☀️ Mode Terang (Light)</button>
-                    <button onclick="setTheme('dark')" class="theme-btn dark-btn">🌙 Mode Gelap (Dark)</button>
+        <div id="tab-profil" class="tab-content text-center py-6">
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border dark:border-slate-700 max-w-sm mx-auto">
+                <h2 class="text-2xl font-black text-blue-600 mb-6">PENGATURAN</h2>
+                <button onclick="hubungkanBluetooth()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mb-4 flex items-center justify-center gap-2">
+                    <span>🔗</span> HUBUNGKAN BLUETOOTH
+                </button>
+                <div class="flex gap-2 mb-6">
+                    <button onclick="gantiTema('light')" class="flex-1 border p-3 rounded-xl dark:text-white">☀️ Light</button>
+                    <button onclick="gantiTema('dark')" class="flex-1 border bg-slate-900 text-white p-3 rounded-xl">🌙 Dark</button>
                 </div>
+                <p class="text-[10px] text-gray-400">Versi 3.0 Build 2026 - Felix Dev</p>
             </div>
         </div>
     </main>
 
-    <div id="area-nota" class="hidden-print">
-        <center>
-            <h3 style="margin:0">TOKO PAKAN BURUNG KEMBANG ARUM</h3>
-            <p style="font-size:10px; margin:0">Nota Penjualan</p>
-            <p>-------------------------</p>
-        </center>
-        <div id="nota-items-list"></div>
-        <p>-------------------------</p>
-        <div id="nota-total-price" style="font-weight:bold; display:flex; justify-content:space-between"></div>
-        <center><p style="margin-top:20px; font-size:10px">Terima Kasih</p></center>
-    </div>
-<div id="modal-history" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold dark:text-white">Detail Transaksi</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+    <div id="modal-history" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-2xl p-6">
+            <h3 class="font-bold text-lg mb-2 dark:text-white text-center">Detail Nota</h3>
+            <div id="modal-body" class="space-y-2 text-sm border-y dark:border-slate-700 py-4 my-4 max-h-60 overflow-y-auto"></div>
+            <div class="flex justify-between font-black text-blue-600 text-lg mb-6">
+                <span>TOTAL</span><span id="modal-total"></span>
             </div>
-            <div id="modal-content-detail" class="space-y-4">
-                </div>
-            <div class="mt-6 pt-4 border-t border-dashed border-gray-300 dark:border-slate-600">
-                <div class="flex justify-between font-black text-xl text-blue-600">
-                    <span>TOTAL</span>
-                    <span id="modal-total-akhir"></span>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-full mt-6 bg-gray-100 dark:bg-slate-700 dark:text-white py-3 rounded-xl font-bold">Tutup</button>
+            <button onclick="tutupModal()" class="w-full bg-slate-100 dark:bg-slate-700 py-3 rounded-xl font-bold dark:text-white">Tutup</button>
         </div>
     </div>
-</div>
+
     <script src="script.js"></script>
 </body>
 </html>
