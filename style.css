@@ -52,13 +52,35 @@ body {
 
 /* KHUSUS PRINT */
 @media print {
-    body * { display: none !important; }
-    #area-nota, #area-nota * { display: block !important; }
-    #area-nota { 
-        position: absolute; left: 0; top: 0; width: 58mm; 
-        font-family: 'Courier New', monospace; font-size: 12px; padding: 5px;
+    /* Sembunyikan semua elemen UI */
+    body * { 
+        visibility: hidden; 
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Tampilkan hanya area nota */
+    #area-nota, #area-nota * { 
+        visibility: visible;
         color: black !important;
     }
+
+    #area-nota {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 48mm; /* Ukuran cetak asli kertas 58mm adalah sekitar 48mm */
+        font-family: 'Courier New', Courier, monospace; /* Font paling tajam untuk thermal */
+        line-height: 1.2;
+    }
+
+    /* Hilangkan Header/Footer tanggal & URL dari Browser */
+    @page {
+        size: auto;
+        margin: 0mm;
+    }
+
+    .no-print { display: none !important; }
 }
 #modal-history.flex {
     display: flex !important;
