@@ -1,92 +1,49 @@
-/* Custom Variables untuk Dark Mode */
 :root {
-    --bg-app: #f8fafc;
-    --text-main: #1e293b;
-    --card-bg: #ffffff;
-    --border-color: #e2e8f0;
+    --primary: #3b82f6;
 }
 
-body.dark {
-    --bg-app: #0f172a;
-    --text-main: #f1f5f9;
-    --card-bg: #1e293b;
-    --border-color: #334155;
+body { font-family: 'Inter', sans-serif; transition: 0.3s; }
+body.dark { background-color: #0f172a; color: #f1f5f9; }
+
+.tab-btn { 
+    padding: 18px 10px; 
+    font-weight: 600; 
+    font-size: 13px; 
+    color: #94a3b8; 
+    border-bottom: 3px solid transparent; 
+    transition: 0.3s;
 }
 
-body {
-    background-color: var(--bg-app);
-    color: var(--text-main);
-    font-family: 'Inter', sans-serif;
-    transition: all 0.3s ease;
+.active-tab { 
+    color: var(--primary); 
+    border-bottom-color: var(--primary); 
 }
-
-.nav-bar { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); }
-
-.tab-btn { color: #94a3b8; padding: 15px 0; font-weight: 500; width: 100%; transition: 0.3s; }
-.active-tab { color: #3b82f6; border-bottom: 3px solid #3b82f6; font-weight: 800; }
 
 .tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.4s; }
+.tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
 
-.input-field {
+.input-style {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--card-bg);
-    color: var(--text-main);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    font-size: 14px;
 }
 
-.btn-primary { background: #3b82f6; color: white; transition: 0.2s; }
-.btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+.dark .input-style {
+    background: #1e293b;
+    border-color: #334155;
+    color: white;
+}
 
-.btn-add { background: #10b981; color: white; }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-.cart-panel { background: var(--card-bg); border: 1px solid var(--border-color); }
-
-.theme-btn { padding: 15px; border-radius: 12px; font-weight: bold; border: 2px solid var(--border-color); }
-.light-btn { background: white; color: black; }
-.dark-btn { background: #0f172a; color: white; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* KHUSUS PRINT */
+/* KHUSUS PRINT BROWSER (Backup jika Bluetooth mati) */
 @media print {
-    /* Sembunyikan semua elemen UI */
-    body * { 
-        visibility: hidden; 
-        margin: 0;
-        padding: 0;
-    }
-
-    /* Tampilkan hanya area nota */
-    #area-nota, #area-nota * { 
-        visibility: visible;
-        color: black !important;
-    }
-
-    #area-nota {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 48mm; /* Ukuran cetak asli kertas 58mm adalah sekitar 48mm */
-        font-family: 'Courier New', Courier, monospace; /* Font paling tajam untuk thermal */
-        line-height: 1.2;
-    }
-
-    /* Hilangkan Header/Footer tanggal & URL dari Browser */
-    @page {
-        size: auto;
-        margin: 0mm;
-    }
-
-    .no-print { display: none !important; }
-}
-#modal-history.flex {
-    display: flex !important;
-    animation: fadeIn 0.2s ease-out;
-}
-
-.dark-text-important {
-    color: var(--text-main) !important;
+    body * { display: none !important; }
+    #modal-body, #modal-body * { display: block !important; visibility: visible; position: absolute; top: 0; left: 0; width: 58mm; color: black; }
 }
