@@ -254,10 +254,53 @@ function ubahQty(idx, n) {
 }
 
 function checkout() {
-    if(keranjang.length === 0) return alert("Keranjang kosong!");
+    if (keranjang.length === 0) return alert("Keranjang kosong!");
+    
     const total = keranjang.reduce((a, b) => a + (b.harga * b.qty), 0);
     const tgl = new Date();
     const waktuStr = `${tgl.toLocaleDateString('id-ID')} ${tgl.getHours()}:${tgl.getMinutes()}`;
+
+    // Buat tampilan Nota di HTML untuk window.print()
+    let notaHtml = `
+        <div style="width: 100%; text-align: center; font-weight: bold; font-size: 14px;">MILKY WAVE</div>
+        <div style="text-align: center; font-size: 10px;">Salatiga, Jawa Tengah</div>
+        <div style="border-bottom: 1px dashed black; margin: 5px 0;"></div>
+        <div style="font-size: 10px; margin-bottom: 5px;">Tgl: ${waktuStr}</div>
+    `;
+
+    keranjang.forEach(item => {
+        notaHtml += `
+            <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span>${item.nama} x${item.qty}</span>
+                <span>${(item.harga * item.qty).toLocaleString()}</span>
+            </div>
+        `;
+    });
+
+    notaHtml += `
+        <div style="border-top: 1px dashed black; margin: 5px 0;"></div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 12px;">
+            <span>TOTAL</span>
+            <span>Rp ${total.toLocaleString()}</span>
+        </div>
+        <div style="text-align: center; margin-top: 10px; font-size: 10px;">*** TERIMA KASIH ***</div>
+        <div style="height: 20px;"></div> `;
+
+    document.getElementById('nota-items-list').innerHTML = ''; // Kosongkan yang lama
+    document.getElementById('area-nota').innerHTML = notaHtml;
+    document.getElementById('area-nota').classList.remove('hidden-print');
+
+    // Tambah history
+    dbHistory.push({ waktu: waktuStr, total: total, items: [...keranjang] });
+    localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
+
+    // Jalankan Print Browser
+    setTimeout(() => {
+        window.print();
+        keranjang = [];
+        renderCart();
+    }, 500);
+}
 
     // Nota
     let notaHtml = '';
