@@ -3,21 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arum berkah RawBT Mode</title>
+    <title>Milky Wave POS - RawBT Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .input-style { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; }
-        .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        /* CSS Khusus Cetak Nota Agar Pas di Kertas 58mm */
+        .input-style { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; transition: 0.3s; }
+        .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
+
+        /* CSS KHUSUS CETAK (RawBT) */
         @media print {
             body * { visibility: hidden; }
             #area-cetak, #area-cetak * { visibility: visible; }
-            #area-cetak { position: absolute; left: 0; top: 0; width: 50mm; font-family: monospace; font-size: 10pt; line-height: 1.2; }
-            nav, button, #conn-status, .no-print { display: none !important; }
+            #area-cetak { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 48mm; 
+                padding: 0; 
+                margin: 0; 
+                font-family: monospace; 
+                color: #000;
+            }
+            nav, button, .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -41,14 +52,14 @@
                     <div id="grid-etalase" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-xl border dark:border-slate-700 h-fit lg:w-80 sticky top-24">
-                    <h3 class="font-black text-sm mb-4 dark:text-white uppercase">Order</h3>
+                    <h3 class="font-black text-sm mb-4 dark:text-white uppercase">Keranjang</h3>
                     <div id="cart-items" class="space-y-2 mb-6 max-h-64 overflow-y-auto pr-2"></div>
                     <div class="border-t-2 border-dashed dark:border-slate-700 pt-4">
                         <div class="flex justify-between font-black text-2xl mb-5 dark:text-white">
                             <span class="text-[10px] text-slate-400 self-center">TOTAL</span>
                             <span id="total-cart">Rp 0</span>
                         </div>
-                        <button onclick="prosesCheckout()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg active:scale-95">CETAK VIA RAWBT</button>
+                        <button onclick="prosesCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg transition active:scale-95">CETAK NOTA</button>
                     </div>
                 </div>
             </div>
@@ -56,14 +67,15 @@
 
         <div id="tab-menu" class="tab-content">
             <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border dark:border-slate-700 mb-8">
+                <h3 id="form-title" class="font-black text-blue-600 mb-4 uppercase">Kelola Barang</h3>
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" id="inp-nama" placeholder="Nama Produk" class="input-style">
-                    <input type="number" id="inp-harga" placeholder="Harga" class="input-style">
+                    <input type="number" id="inp-harga" placeholder="Harga Jual" class="input-style">
                     <input type="text" id="inp-kategori" placeholder="Kategori" class="input-style">
-                    <input type="file" id="inp-foto" class="text-xs p-2">
+                    <input type="file" id="inp-foto" class="text-xs text-slate-400 p-2">
                     <div class="flex gap-2 md:col-span-2">
-                        <button onclick="simpanBarang()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">SIMPAN</button>
+                        <button id="btn-simpan" onclick="simpanBarang()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">SIMPAN</button>
                         <button id="btn-batal" onclick="resetFormMenu()" class="hidden bg-slate-400 text-white px-6 py-3 rounded-xl font-bold">BATAL</button>
                     </div>
                 </div>
@@ -77,27 +89,30 @@
 
         <div id="tab-profil" class="tab-content text-center py-6">
             <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border dark:border-slate-700 max-w-sm mx-auto">
-                <h2 class="text-xl font-black mb-6 dark:text-white">PENGATURAN TEMA</h2>
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🌙</div>
+                <h2 class="text-xl font-black mb-6 dark:text-white uppercase">Pengaturan Tema</h2>
                 <div class="flex gap-2">
-                    <button onclick="gantiTema('light')" class="flex-1 border p-4 rounded-2xl dark:text-white font-bold text-xs">☀️ TERANG</button>
-                    <button onclick="gantiTema('dark')" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold text-xs">🌙 GELAP</button>
+                    <button onclick="gantiTema('light')" class="flex-1 border p-4 rounded-2xl dark:text-white font-bold text-[10px] hover:bg-slate-50 transition">☀️ LIGHT</button>
+                    <button onclick="gantiTema('dark')" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold text-[10px] hover:bg-slate-800 transition">🌙 DARK</button>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-8 font-bold italic">Pastikan sudah install aplikasi RawBT di Play Store.</p>
+                <p class="text-[9px] text-slate-400 mt-10 font-bold uppercase tracking-widest">Printer: RPP02N (via RawBT)</p>
             </div>
         </div>
     </main>
 
-    <div id="area-cetak" class="hidden">
+    <div id="area-cetak" style="display: none;">
         <center>
-            <h2 style="margin:0">Pakan Burung Kembang Arum</h2>
-            <p style="font-size:8pt">Salatiga, Indonesia</p>
-            <p>--------------------------------</p>
+            <strong style="font-size: 11pt;">MILKY WAVE</strong><br>
+            <span style="font-size: 8pt;">Salatiga, Jawa Tengah</span><br>
+            -------------------------------
         </center>
-        <div id="isi-nota" style="font-size:9pt"></div>
-        <p>--------------------------------</p>
-        <div id="total-nota" style="font-weight:bold"></div>
+        <div id="isi-nota" style="font-size: 9pt; line-height: 1.2;"></div>
+        <center>-------------------------------</center>
+        <div id="total-nota" style="font-size: 10pt; font-weight: bold;"></div>
         <center>
-            <p><br>Terima Kasih!<br>Semoga Berkunjung Kembali!<br><br><br></p>
+            <br>
+            <span style="font-size: 8pt;">Terima Kasih!<br>Selamat Menikmati<br>IG: @milkywave.id</span>
+            <br><br><br><br>
         </center>
     </div>
 
