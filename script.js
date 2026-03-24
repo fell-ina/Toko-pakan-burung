@@ -1,226 +1,78 @@
-// ==========================================
-// DATABASE LOKAL (LocalStorage)
-// ==========================================
+// VARIABEL GLOBAL
 let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
 let dbHistory = JSON.parse(localStorage.getItem('dbHistory')) || [];
 let keranjang = [];
 let filterKategori = 'Semua';
+let printerCharacteristic = null; // Koneksi Bluetooth
 
 // ==========================================
-// NAVIGASI TAB
+// KONEKSI BLUETOOTH (WEB API)
 // ==========================================
-function openTab(tabId) {
+
+async function hubungkanBluetooth() {
+    try {
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+        });
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+        printerCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+        
+        document.getElementById('bt-status').innerText = "✅ PRINTER TERHUBUNG: " + device.name;
+        document.getElementById('bt-status').className = "bg-green-100 text-green-800 text-[10px] text-center py-1 font-bold";
+        alert("Printer " + device.name + " siap digunakan!");
+    } catch (e) {
+        alert("Gagal konek Bluetooth: " + e.message);
+    }
+}
+
+// ==========================================
+// KASIR & PRINT LOGIC
+// ==========================================
+
+function openTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
-    
-    document.getElementById(tabId).classList.add('active');
-    document.getElementById('btn-' + tabId).classList.add('active-tab');
-
-    // Refresh data setiap pindah tab
-    if(tabId === 'tab-print') renderEtalase();
-    if(tabId === 'tab-menu') renderTableMenu();
-    if(tabId === 'tab-history') renderHistory();
+    document.getElementById(id).classList.add('active');
+    document.getElementById('btn-' + id).classList.add('active-tab');
+    if(id === 'tab-print') renderEtalase();
+    if(id === 'tab-menu') renderMenu();
+    if(id === 'tab-history') renderHistory();
 }
-
-// ==========================================
-// MANAJEMEN ITEM (TAB MENU)
-// ==========================================
-
-// Simpan Barang Baru
-function addItem() {
-    const nama = document.getElementById('inp-nama').value;
-    const harga = parseInt(document.getElementById('inp-harga').value);
-    const satuan = document.getElementById('inp-satuan').value;
-    const kategori = document.getElementById('inp-kategori').value.trim() || "Tanpa Kategori";
-    const fotoFile = document.getElementById('inp-foto').files[0];
-
-    if(!nama || !harga) return alert("Nama dan Harga wajib diisi!");
-
-    const simpanProses = (imgData) => {
-        dbBarang.push({ id: Date.now(), nama, harga, satuan, kategori, foto: imgData });
-        localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
-        alert("Barang berhasil ditambahkan!");
-        resetForm();
-        renderTableMenu();
-    };
-
-    if(fotoFile) {
-        const reader = new FileReader();
-        reader.onload = (e) => simpanProses(e.target.result);
-        reader.readAsDataURL(fotoFile);
-    } else {
-        simpanProses(null);
-    }
-}
-
-// Render Menu dengan Grouping Kategori
-function renderTableMenu() {
-    const container = document.getElementById('menu-grouped-list');
-    const datalist = document.getElementById('list-kat');
-    container.innerHTML = '';
-    datalist.innerHTML = '';
-
-    if (dbBarang.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500 py-10">Belum ada barang di etalase.</p>';
-        return;
-    }
-
-    // Update Datalist Kategori
-    let uniqueKats = [...new Set(dbBarang.map(b => b.kategori))];
-    uniqueKats.forEach(k => datalist.innerHTML += `<option value="${k}">`);
-
-    // Grouping
-    const grouped = dbBarang.reduce((acc, item) => {
-        const kat = item.kategori || "Tanpa Kategori";
-        if (!acc[kat]) acc[kat] = [];
-        acc[kat].push(item);
-        return acc;
-    }, {});
-
-    for (const kategori in grouped) {
-        let section = `
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mb-6">
-                <div class="bg-gray-50 dark:bg-slate-700 px-4 py-2 border-b dark:border-slate-600 flex justify-between">
-                    <span class="font-bold text-blue-600 dark:text-blue-400 uppercase text-xs tracking-wider">${kategori}</span>
-                    <span class="text-xs text-gray-400">${grouped[kategori].length} Item</span>
-                </div>
-                <table class="w-full text-left text-sm">
-                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-        `;
-
-        grouped[kategori].forEach(item => {
-            section += `
-                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-                    <td class="p-4 flex items-center gap-3">
-                        ${item.foto ? `<img src="${item.foto}" class="w-10 h-10 rounded-md object-cover">` : `<div class="w-10 h-10 bg-gray-100 dark:bg-slate-600 rounded-md flex items-center justify-center text-[8px] text-gray-400">No Img</div>`}
-                        <span class="font-semibold dark:text-white">${item.nama}</span>
-                    </td>
-                    <td class="p-4 text-blue-600 font-bold">Rp ${item.harga.toLocaleString()}/${item.satuan}</td>
-                    <td class="p-4 text-right space-x-2">
-                        <button onclick="prepareEdit(${item.id})" class="text-amber-500 hover:bg-amber-50 p-2 rounded">✏️</button>
-                        <button onclick="hapusItemById(${item.id})" class="text-red-500 hover:bg-red-50 p-2 rounded">🗑️</button>
-                    </td>
-                </tr>
-            `;
-        });
-        section += `</tbody></table></div>`;
-        container.innerHTML += section;
-    }
-}
-
-// Persiapan Edit
-function prepareEdit(id) {
-    const item = dbBarang.find(b => b.id === id);
-    if (!item) return;
-
-    document.getElementById('edit-id').value = item.id;
-    document.getElementById('inp-nama').value = item.nama;
-    document.getElementById('inp-harga').value = item.harga;
-    document.getElementById('inp-satuan').value = item.satuan;
-    document.getElementById('inp-kategori').value = item.kategori === "Tanpa Kategori" ? "" : item.kategori;
-
-    document.getElementById('form-title').innerText = "Mode Edit: " + item.nama;
-    const btnSimpan = document.getElementById('btn-simpan');
-    btnSimpan.innerText = "UPDATE DATA";
-    btnSimpan.style.backgroundColor = "#f59e0b"; // Amber
-    btnSimpan.onclick = updateItem;
-    document.getElementById('btn-batal').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Proses Update
-function updateItem() {
-    const id = parseInt(document.getElementById('edit-id').value);
-    const itemIdx = dbBarang.findIndex(b => b.id === id);
-    const fotoFile = document.getElementById('inp-foto').files[0];
-
-    const simpanUpdate = (imgData) => {
-        dbBarang[itemIdx] = {
-            ...dbBarang[itemIdx],
-            nama: document.getElementById('inp-nama').value,
-            harga: parseInt(document.getElementById('inp-harga').value),
-            satuan: document.getElementById('inp-satuan').value,
-            kategori: document.getElementById('inp-kategori').value || "Tanpa Kategori",
-            foto: imgData || dbBarang[itemIdx].foto
-        };
-        localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
-        alert("Data diperbarui!");
-        resetForm();
-        renderTableMenu();
-    };
-
-    if(fotoFile) {
-        const reader = new FileReader();
-        reader.onload = (e) => simpanUpdate(e.target.result);
-        reader.readAsDataURL(fotoFile);
-    } else {
-        simpanUpdate(null);
-    }
-}
-
-function hapusItemById(id) {
-    if(confirm("Hapus item ini dari etalase?")) {
-        dbBarang = dbBarang.filter(b => b.id !== id);
-        localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
-        renderTableMenu();
-    }
-}
-
-function resetForm() {
-    document.getElementById('edit-id').value = '';
-    document.getElementById('inp-nama').value = '';
-    document.getElementById('inp-harga').value = '';
-    document.getElementById('inp-kategori').value = '';
-    document.getElementById('inp-foto').value = '';
-    document.getElementById('form-title').innerText = "Tambah Item Baru";
-    const btnSimpan = document.getElementById('btn-simpan');
-    btnSimpan.innerText = "SIMPAN BARANG";
-    btnSimpan.style.backgroundColor = "#10b981"; // Green
-    btnSimpan.onclick = addItem;
-    document.getElementById('btn-batal').classList.add('hidden');
-}
-
-// ==========================================
-// TRANSAKSI & KASIR (TAB PRINT)
-// ==========================================
 
 function renderEtalase() {
     const grid = document.getElementById('grid-etalase');
     const chips = document.getElementById('category-chips');
     grid.innerHTML = '';
     
-    // Render Chips
     let kats = ['Semua', ...new Set(dbBarang.map(b => b.kategori))];
     chips.innerHTML = kats.map(k => `
-        <button onclick="setFilter('${k}')" class="px-4 py-1 rounded-full border whitespace-nowrap transition ${filterKategori === k ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 dark:bg-slate-700 dark:text-gray-300'}">
+        <button onclick="setFilter('${k}')" class="px-4 py-1.5 rounded-full border text-xs whitespace-nowrap transition ${filterKategori === k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600 text-slate-600'}">
             ${k}
         </button>
     `).join('');
 
-    // Render Items
     dbBarang.filter(b => filterKategori === 'Semua' || b.kategori === filterKategori).forEach(b => {
         grid.innerHTML += `
-            <div onclick="tambahKeKeranjang(${b.id})" class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-md transition active:scale-95">
-                <div class="h-24 bg-gray-50 dark:bg-slate-700 rounded-lg overflow-hidden mb-2">
+            <div onclick="tambahKeKeranjang(${b.id})" class="bg-white dark:bg-slate-800 p-2 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md active:scale-95 transition">
+                <div class="h-24 bg-slate-50 dark:bg-slate-700 rounded-xl overflow-hidden mb-2">
                     ${b.foto ? `<img src="${b.foto}" class="w-full h-full object-cover">` : ''}
                 </div>
                 <p class="font-bold text-xs truncate dark:text-white">${b.nama}</p>
-                <p class="text-[10px] text-blue-500 font-bold uppercase">Rp ${b.harga.toLocaleString()}/${b.satuan}</p>
+                <p class="text-[10px] text-blue-500 font-bold">Rp ${b.harga.toLocaleString()}</p>
             </div>
         `;
     });
 }
 
-function setFilter(k) {
-    filterKategori = k;
-    renderEtalase();
-}
+function setFilter(k) { filterKategori = k; renderEtalase(); }
 
 function tambahKeKeranjang(id) {
-    const barang = dbBarang.find(b => b.id === id);
+    const item = dbBarang.find(b => b.id === id);
     const ada = keranjang.find(k => k.id === id);
-    if(ada) ada.qty += 1;
-    else keranjang.push({ ...barang, qty: 1 });
+    if(ada) ada.qty++;
+    else keranjang.push({ ...item, qty: 1 });
     renderCart();
 }
 
@@ -228,18 +80,18 @@ function renderCart() {
     const list = document.getElementById('cart-items');
     let total = 0;
     list.innerHTML = '';
-    keranjang.forEach((item, index) => {
+    keranjang.forEach((item, idx) => {
         total += (item.harga * item.qty);
         list.innerHTML += `
-            <div class="flex justify-between items-center text-sm p-2 bg-gray-50 dark:bg-slate-700 rounded-lg">
+            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-2.5 rounded-xl border dark:border-slate-600">
                 <div class="flex-1">
-                    <p class="font-bold dark:text-white">${item.nama}</p>
-                    <p class="text-[10px] text-gray-500">@ ${item.harga.toLocaleString()}</p>
+                    <p class="font-bold text-xs dark:text-white">${item.nama}</p>
+                    <p class="text-[9px] text-slate-400">Rp ${item.harga.toLocaleString()} x ${item.qty}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="ubahQty(${index}, -1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded shadow text-xs">-</button>
-                    <span class="font-bold w-4 text-center dark:text-white">${item.qty}</span>
-                    <button onclick="ubahQty(${index}, 1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded shadow text-xs">+</button>
+                    <button onclick="ubahQty(${idx}, -1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded-lg shadow text-xs">-</button>
+                    <span class="font-bold text-xs dark:text-white w-4 text-center">${item.qty}</span>
+                    <button onclick="ubahQty(${idx}, 1)" class="w-6 h-6 bg-white dark:bg-slate-600 rounded-lg shadow text-xs">+</button>
                 </div>
             </div>
         `;
@@ -247,157 +99,183 @@ function renderCart() {
     document.getElementById('total-cart').innerText = `Rp ${total.toLocaleString()}`;
 }
 
-function ubahQty(idx, n) {
-    keranjang[idx].qty += n;
-    if(keranjang[idx].qty < 1) keranjang.splice(idx, 1);
+function ubahQty(i, n) {
+    keranjang[i].qty += n;
+    if(keranjang[i].qty < 1) keranjang.splice(i, 1);
     renderCart();
 }
 
-function checkout() {
-    if (keranjang.length === 0) return alert("Keranjang kosong!");
+// FUNGSI PRINT UTAMA
+async function prosesCheckout() {
+    if(keranjang.length === 0) return alert("Keranjang kosong!");
     
     const total = keranjang.reduce((a, b) => a + (b.harga * b.qty), 0);
     const tgl = new Date();
     const waktuStr = `${tgl.toLocaleDateString('id-ID')} ${tgl.getHours()}:${tgl.getMinutes()}`;
 
-    // Buat tampilan Nota di HTML untuk window.print()
-    let notaHtml = `
-        <div style="width: 100%; text-align: center; font-weight: bold; font-size: 14px;">MILKY WAVE</div>
-        <div style="text-align: center; font-size: 10px;">Salatiga, Jawa Tengah</div>
-        <div style="border-bottom: 1px dashed black; margin: 5px 0;"></div>
-        <div style="font-size: 10px; margin-bottom: 5px;">Tgl: ${waktuStr}</div>
-    `;
-
-    keranjang.forEach(item => {
-        notaHtml += `
-            <div style="display: flex; justify-content: space-between; font-size: 11px;">
-                <span>${item.nama} x${item.qty}</span>
-                <span>${(item.harga * item.qty).toLocaleString()}</span>
-            </div>
-        `;
-    });
-
-    notaHtml += `
-        <div style="border-top: 1px dashed black; margin: 5px 0;"></div>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 12px;">
-            <span>TOTAL</span>
-            <span>Rp ${total.toLocaleString()}</span>
-        </div>
-        <div style="text-align: center; margin-top: 10px; font-size: 10px;">*** TERIMA KASIH ***</div>
-        <div style="height: 20px;"></div> `;
-
-    document.getElementById('nota-items-list').innerHTML = ''; // Kosongkan yang lama
-    document.getElementById('area-nota').innerHTML = notaHtml;
-    document.getElementById('area-nota').classList.remove('hidden-print');
-
-    // Tambah history
+    // 1. SIMPAN KE HISTORY
     dbHistory.push({ waktu: waktuStr, total: total, items: [...keranjang] });
     localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
 
-    // Jalankan Print Browser
-    setTimeout(() => {
-        window.print();
-        keranjang = [];
-        renderCart();
-    }, 500);
-}
-
-    // Nota
-    let notaHtml = '';
-    keranjang.forEach(i => {
-        notaHtml += `<div style="display:flex; justify-content:space-between; font-size:11px"><span>${i.nama} x${i.qty}</span><span>${(i.harga*i.qty).toLocaleString()}</span></div>`;
-    });
-    document.getElementById('nota-items-list').innerHTML = notaHtml;
-    document.getElementById('nota-total-price').innerHTML = `<span>TOTAL</span><span>Rp ${total.toLocaleString()}</span>`;
-
-    // Simpan History
-    dbHistory.push({ waktu: waktuStr, total: total, items: [...keranjang] });
-    localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
-
-    window.print();
-    keranjang = [];
-    renderCart();
-}
-
-// ==========================================
-// HISTORY & POPUP (TAB HISTORY)
-// ==========================================
-
-function renderHistory() {
-    const container = document.getElementById('history-detail-list');
-    container.innerHTML = '';
-    if(dbHistory.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500 py-10">Belum ada riwayat.</p>';
+    // 2. CEK KONEKSI BLUETOOTH
+    if (!printerCharacteristic) {
+        alert("Printer belum konek! Klik Setting -> Hubungkan Bluetooth. Nota hanya disimpan di history.");
         return;
     }
 
-    dbHistory.slice().reverse().forEach((h, index) => {
-        const idxAsli = dbHistory.length - 1 - index;
-        container.innerHTML += `
-            <div onclick="showDetailHistory(${idxAsli})" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-500 transition shadow-sm">
-                <div>
-                    <p class="text-[10px] text-blue-500 font-bold">${h.waktu}</p>
-                    <p class="font-bold dark:text-white text-sm">${h.items.length} Jenis Barang</p>
-                </div>
-                <p class="text-green-600 font-black">Rp ${h.total.toLocaleString()}</p>
-            </div>
-        `;
-    });
-}
+    // 3. ENCODE UNTUK PRINTER (TEKS SAJA TANPA FOTO)
+    try {
+        let encoder = new EscPosEncoder();
+        let result = encoder
+            .initialize()
+            .align('center')
+            .bold(true)
+            .line('MILKY WAVE')
+            .bold(false)
+            .line('Salatiga, Jawa Tengah')
+            .line('--------------------------------')
+            .align('left')
+            .line('Tgl: ' + waktuStr);
 
-function showDetailHistory(index) {
-    const data = dbHistory[index];
-    const container = document.getElementById('modal-content-detail');
-    const totalElt = document.getElementById('modal-total-akhir');
-    const modal = document.getElementById('modal-history');
+        keranjang.forEach(item => {
+            // Kalkulasi spasi agar rapi rata kanan
+            let line = item.nama + ' x' + item.qty;
+            let price = (item.harga * item.qty).toLocaleString();
+            let spaces = 32 - line.length - price.length;
+            result.line(line + " ".repeat(Math.max(1, spaces)) + price);
+        });
 
-    let html = `<p class="text-xs text-gray-400 mb-2">Waktu Transaksi: ${data.waktu}</p>`;
-    data.items.forEach(item => {
-        html += `
-            <div class="flex justify-between items-center border-b dark:border-slate-700 py-2">
-                <div class="flex-1">
-                    <p class="font-bold text-sm dark:text-white">${item.nama}</p>
-                    <p class="text-[10px] text-gray-500">Rp ${item.harga.toLocaleString()} x ${item.qty} ${item.satuan}</p>
-                </div>
-                <p class="font-bold text-sm dark:text-white">Rp ${(item.harga * item.qty).toLocaleString()}</p>
-            </div>
-        `;
-    });
+        result.line('--------------------------------')
+            .bold(true)
+            .line('TOTAL: ' + " ".repeat(32 - 7 - total.toLocaleString().length) + total.toLocaleString())
+            .bold(false)
+            .align('center')
+            .line('\nTerima Kasih\n\n\n\n'); // Spasi agar kertas keluar
 
-    container.innerHTML = html;
-    totalElt.innerText = `Rp ${data.total.toLocaleString()}`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
+        const data = result.encode();
+        
+        // Kirim data per 20 byte (aturan bluetooth)
+        for (let i = 0; i < data.length; i += 20) {
+            await printerCharacteristic.writeValue(data.slice(i, i + 20));
+        }
 
-function closeModal() {
-    const modal = document.getElementById('modal-history');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-function clearHistory() {
-    if(confirm("Hapus semua riwayat permanen?")) {
-        dbHistory = [];
-        localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
-        renderHistory();
+        alert("Nota Berhasil Dicetak!");
+        keranjang = [];
+        renderCart();
+    } catch (e) {
+        console.error(e);
+        alert("Gagal cetak Bluetooth. Pastikan printer nyala.");
     }
 }
 
 // ==========================================
-// PENGATURAN TEMA & LOAD AWAL
+// MENU & HISTORY (SIMPLIFIED)
 // ==========================================
 
-function setTheme(mode) {
-    const body = document.getElementById('appBody');
-    if(mode === 'dark') body.classList.add('dark');
-    else body.classList.remove('dark');
-    localStorage.setItem('theme', mode);
+function simpanBarang() {
+    const nama = document.getElementById('inp-nama').value;
+    const harga = parseInt(document.getElementById('inp-harga').value);
+    const satuan = document.getElementById('inp-satuan').value;
+    const kategori = document.getElementById('inp-kategori').value || "Umum";
+    const fotoFile = document.getElementById('inp-foto').files[0];
+    const idEdit = document.getElementById('edit-id').value;
+
+    if(!nama || !harga) return alert("Isi data barang!");
+
+    const action = (img) => {
+        const itemData = { id: idEdit ? parseInt(idEdit) : Date.now(), nama, harga, satuan, kategori, foto: img };
+        if(idEdit) {
+            const idx = dbBarang.findIndex(b => b.id === parseInt(idEdit));
+            dbBarang[idx] = itemData;
+        } else {
+            dbBarang.push(itemData);
+        }
+        localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
+        resetFormMenu(); renderMenu();
+    };
+
+    if(fotoFile) {
+        const r = new FileReader(); r.onload = (e) => action(e.target.result); r.readAsDataURL(fotoFile);
+    } else {
+        action(idEdit ? dbBarang.find(b => b.id == idEdit).foto : null);
+    }
 }
 
-// Event klik di luar modal untuk tutup
-window.onclick = (e) => { if(e.target.id === 'modal-history') closeModal(); };
+function renderMenu() {
+    const container = document.getElementById('menu-grouped-list');
+    container.innerHTML = '';
+    const grouped = dbBarang.reduce((acc, item) => {
+        const k = item.kategori || "Umum";
+        if(!acc[k]) acc[k] = []; acc[k].push(item); return acc;
+    }, {});
 
-// Inisialisasi Data
-if(localStorage.getItem('theme') === 'dark') setTheme('dark');
+    for(const kat in grouped) {
+        let html = `<div class="bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 overflow-hidden shadow-sm">
+            <div class="bg-slate-50 dark:bg-slate-700 px-4 py-2 font-bold text-xs text-blue-600 uppercase">${kat}</div>
+            <div class="divide-y dark:divide-slate-700">`;
+        grouped[kat].forEach(item => {
+            html += `<div class="flex justify-between items-center p-4">
+                <div class="flex items-center gap-3">
+                    <span class="font-bold dark:text-white text-sm">${item.nama}</span>
+                    <span class="text-[10px] text-slate-400">Rp ${item.harga.toLocaleString()}</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="prepareEditMenu(${item.id})" class="text-amber-500 text-sm">✏️</button>
+                    <button onclick="hapusMenu(${item.id})" class="text-red-500 text-sm">🗑️</button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML += html + `</div></div>`;
+    }
+}
+
+function prepareEditMenu(id) {
+    const item = dbBarang.find(b => b.id === id);
+    document.getElementById('edit-id').value = item.id;
+    document.getElementById('inp-nama').value = item.nama;
+    document.getElementById('inp-harga').value = item.harga;
+    document.getElementById('inp-kategori').value = item.kategori;
+    document.getElementById('btn-simpan').innerText = "UPDATE";
+    document.getElementById('btn-batal').classList.remove('hidden');
+    window.scrollTo(0,0);
+}
+
+function resetFormMenu() {
+    document.getElementById('edit-id').value = '';
+    document.getElementById('inp-nama').value = '';
+    document.getElementById('inp-harga').value = '';
+    document.getElementById('btn-simpan').innerText = "SIMPAN";
+    document.getElementById('btn-batal').classList.add('hidden');
+}
+
+function hapusMenu(id) { if(confirm("Hapus item?")) { dbBarang = dbBarang.filter(b => b.id !== id); localStorage.setItem('dbBarang', JSON.stringify(dbBarang)); renderMenu(); } }
+
+function renderHistory() {
+    const list = document.getElementById('history-list'); list.innerHTML = '';
+    dbHistory.slice().reverse().forEach((h, idx) => {
+        const idAsli = dbHistory.length - 1 - idx;
+        list.innerHTML += `<div onclick="bukaModal(${idAsli})" class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex justify-between cursor-pointer">
+            <span class="text-xs dark:text-white">${h.waktu}</span>
+            <span class="font-bold text-green-600">Rp ${h.total.toLocaleString()}</span>
+        </div>`;
+    });
+}
+
+function bukaModal(idx) {
+    const h = dbHistory[idx];
+    document.getElementById('modal-body').innerHTML = h.items.map(i => `<div>${i.nama} x ${i.qty} = Rp ${(i.harga*i.qty).toLocaleString()}</div>`).join('');
+    document.getElementById('modal-total').innerText = `Rp ${h.total.toLocaleString()}`;
+    document.getElementById('modal-history').classList.replace('hidden', 'flex');
+}
+function tutupModal() { document.getElementById('modal-history').classList.replace('flex', 'hidden'); }
+function resetHistory() { if(confirm("Hapus semua?")) { dbHistory = []; localStorage.setItem('dbHistory', JSON.stringify(dbHistory)); renderHistory(); } }
+
+function gantiTema(t) {
+    const b = document.getElementById('appBody');
+    if(t === 'dark') b.classList.add('dark'); else b.classList.remove('dark');
+    localStorage.setItem('theme', t);
+}
+
+// START
+if(localStorage.getItem('theme') === 'dark') gantiTema('dark');
 renderEtalase();
