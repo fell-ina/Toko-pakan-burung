@@ -9,23 +9,39 @@ let printerCharacteristic = null;
 // ==========================================
 async function hubungkanBluetooth() {
     try {
+        // 1. Cari perangkat tanpa filter UUID yang kaku
         const device = await navigator.bluetooth.requestDevice({
             acceptAllDevices: true,
-            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] 
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-41aa-8956-7283aa068205']
         });
+
         const server = await device.gatt.connect();
-        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-        printerCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
         
+        // 2. Cari Service secara otomatis
+        const services = await server.getPrimaryServices();
+        if (services.length === 0) throw new Error("Tidak ada service ditemukan");
+        
+        // Pilih service pertama yang tersedia
+        const service = services[0];
+        
+        // 3. Cari Characteristic secara otomatis
+        const characteristics = await service.getCharacteristics();
+        if (characteristics.length === 0) throw new Error("Tidak ada characteristic ditemukan");
+        
+        // Pilih characteristic yang bisa "Write"
+        printerCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+
+        if (!printerCharacteristic) throw new Error("Printer tidak mendukung pengiriman data");
+
         const statusEl = document.getElementById('conn-status');
-        statusEl.innerText = "🟢 Bluetooth Terhubung: " + device.name;
-        statusEl.className = "bg-blue-600 text-white text-[10px] text-center py-1 font-bold";
-        alert("Printer " + device.name + " Terhubung!");
+        statusEl.innerText = "🟢 TERHUBUNG: " + device.name;
+        statusEl.className = "bg-green-600 text-white text-[10px] text-center py-1 font-bold";
+        alert("Koneksi Berhasil! Silakan coba cetak.");
     } catch (e) {
-        alert("Gagal konek: " + e.message);
+        console.error(e);
+        alert("Error: " + e.message);
     }
 }
-
 // ==========================================
 // KASIR LOGIC
 // ==========================================
