@@ -1,49 +1,21 @@
-:root {
-    --primary: #3b82f6;
-}
-
-body { font-family: 'Inter', sans-serif; transition: 0.3s; }
-body.dark { background-color: #0f172a; color: #f1f5f9; }
-
-.tab-btn { 
-    padding: 18px 10px; 
-    font-weight: 600; 
-    font-size: 13px; 
-    color: #94a3b8; 
-    border-bottom: 3px solid transparent; 
-    transition: 0.3s;
-}
-
-.active-tab { 
-    color: var(--primary); 
-    border-bottom-color: var(--primary); 
-}
-
+/* Sembunyikan scrollbar tapi tetap bisa scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
 .tab-content { display: none; }
-.tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
+.tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.input-style {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    font-size: 14px;
+.input-style { 
+    width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; 
+    background: #fff; font-size: 14px; transition: 0.3s; 
 }
+.dark .input-style { background: #1e293b; border-color: #334155; color: white; }
 
-.dark .input-style {
-    background: #1e293b;
-    border-color: #334155;
-    color: white;
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* KHUSUS PRINT BROWSER (Backup jika Bluetooth mati) */
+/* CSS KHUSUS UNTUK PRINTER RPP02N (58mm) */
 @media print {
-    body * { display: none !important; }
-    #modal-body, #modal-body * { display: block !important; visibility: visible; position: absolute; top: 0; left: 0; width: 58mm; color: black; }
+    /* Sembunyikan SEMUA elemen web saat cetak */
+    body * { visibility: hidden; background: white !important; }
+    .no-print { display: none !important; }
+
+    /* Hanya tampilkan iframe/konten nota yang dibuat JS */
+    #print-frame { visibility: visible; position: fixed; left: 0; top: 0; width: 100%; }
 }
