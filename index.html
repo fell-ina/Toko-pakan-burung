@@ -3,66 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kembang Arum POS</title>
-    <link rel="stylesheet" href="style.css">
+    <title>KEMBANG ARUM POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-100 pb-24">
+<body class="bg-slate-50 text-slate-900 font-sans pb-20">
 
-    <header class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
-        <h1 class="text-xl font-black italic tracking-tighter">KEMBANG ARUM <span class="text-blue-500">POS</span></h1>
+    <header class="bg-white p-4 sticky top-0 shadow-sm z-10">
+        <h1 class="text-center text-blue-700 font-black text-xl tracking-tight">KEMBANG ARUM POS</h1>
     </header>
 
-    <div id="kasir" class="tab-content active p-4">
-        <input type="text" id="search-kasir" onkeyup="filterTampilan('kasir')" placeholder="Cari pakan..." class="search-input">
-        
-        <div id="produk-list" class="grid-produk mb-4"></div>
+    <main id="tab-kasir" class="p-4 space-y-4">
+        <input type="text" id="search-kasir" onkeyup="filterProduk('kasir')" placeholder="🔍 Cari pakan..." 
+               class="w-full p-4 rounded-2xl border-none bg-white shadow-md focus:ring-2 focus:ring-blue-500">
+        <div id="produk-list" class="grid grid-cols-2 gap-3"></div>
+    </main>
 
-        <div class="card-keranjang">
-            <h2 class="label-keranjang">Keranjang Belanja</h2>
-            <div id="cart-items" class="space-y-3 mb-4"></div>
-            <div class="flex justify-between items-center border-t pt-4">
-                <span class="total-label">TOTAL</span>
-                <span id="cart-total" class="total-amount">Rp 0</span>
-            </div>
-            <button onclick="prosesCheckout()" class="btn-cetak">
-                <i class="fa-solid fa-print mr-2"></i> Cetak Nota
-            </button>
+    <main id="tab-produk" class="hidden p-4 space-y-4">
+        <div class="bg-white p-5 rounded-3xl shadow-lg space-y-3">
+            <h2 class="font-bold text-lg">Tambah Produk Baru</h2>
+            <input type="text" id="p-nama" placeholder="Nama Produk" class="w-full p-3 bg-slate-100 rounded-xl border-none">
+            <input type="number" id="p-harga" placeholder="Harga (Rp)" class="w-full p-3 bg-slate-100 rounded-xl border-none">
+            <button onclick="tambahProdukBaru()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95 transition">SIMPAN KE KATALOG</button>
         </div>
-    </div>
+        <hr class="my-4 border-slate-200">
+        <input type="text" id="search-produk" onkeyup="filterProduk('produk')" placeholder="🔍 Cari di gudang..." 
+               class="w-full p-4 rounded-2xl border-none bg-white shadow-md focus:ring-2 focus:ring-blue-500">
+        <div id="master-produk-list" class="space-y-3"></div>
+    </main>
 
-    <div id="produk" class="tab-content p-4">
-        <div class="form-container">
-            <h2 class="font-bold mb-4">Tambah Produk Baru</h2>
-            <input type="text" id="p-nama" placeholder="Nama Produk" class="input-field">
-            <input type="number" id="p-harga" placeholder="Harga (Rp)" class="input-field">
-            <button onclick="simpanProdukBaru()" class="btn-simpan">Simpan ke Katalog</button>
-        </div>
-
-        <input type="text" id="search-produk" onkeyup="filterTampilan('produk')" placeholder="Cari di gudang..." class="search-input">
-        <div id="master-produk-list" class="space-y-2"></div>
-    </div>
-
-    <div id="riwayat" class="tab-content p-4">
+    <main id="tab-riwayat" class="hidden p-4">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-slate-800 text-lg">Riwayat Penjualan</h2>
-            <button onclick="hapusSemuaRiwayat()" class="btn-reset">Hapus Semua</button>
+            <h2 class="font-bold text-lg">📜 Riwayat Penjualan</h2>
+            <button onclick="hapusSemuaRiwayat()" class="text-red-500 text-sm font-bold">Hapus Semua</button>
         </div>
         <div id="history-list" class="space-y-3"></div>
-    </div>
+    </main>
 
-    <nav class="bottom-nav">
-        <button onclick="switchTab('kasir')" id="nav-kasir" class="nav-item active">
-            <i class="fa-solid fa-cash-register text-xl"></i><span class="nav-text">Kasir</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t flex justify-around p-3 shadow-2xl">
+        <button onclick="switchTab('kasir')" class="flex flex-col items-center text-blue-600">
+            <span class="text-xl">🛒</span><span class="text-[10px] font-bold">KASIR</span>
         </button>
-        <button onclick="switchTab('produk')" id="nav-produk" class="nav-item">
-            <i class="fa-solid fa-box text-xl"></i><span class="nav-text">Produk</span>
+        <button onclick="switchTab('produk')" class="flex flex-col items-center text-slate-400">
+            <span class="text-xl">📦</span><span class="text-[10px] font-bold">PRODUK</span>
         </button>
-        <button onclick="switchTab('riwayat')" id="nav-riwayat" class="nav-item">
-            <i class="fa-solid fa-scroll text-xl"></i><span class="nav-text">Riwayat</span>
+        <button onclick="switchTab('riwayat')" class="flex flex-col items-center text-slate-400">
+            <span class="text-xl">📜</span><span class="text-[10px] font-bold">RIWAYAT</span>
         </button>
     </nav>
+
+    <div id="cart-drawer" class="fixed bottom-20 left-4 right-4 bg-blue-900 text-white p-5 rounded-3xl shadow-2xl hidden">
+        <div class="flex justify-between items-center mb-4">
+            <span class="font-black">TOTAL: Rp <span id="cart-total">0</span></span>
+            <button onclick="prosesCheckout()" class="bg-white text-blue-900 px-6 py-2 rounded-full font-black">CETAK NOTA</button>
+        </div>
+        <div id="cart-items" class="text-xs space-y-2 opacity-80 max-h-32 overflow-y-auto"></div>
+    </div>
 
     <script src="script.js"></script>
 </body>
