@@ -1,4 +1,3 @@
-/* Sembunyikan scrollbar tapi tetap bisa scroll */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
@@ -10,12 +9,7 @@
 }
 .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
 
-/* CSS KHUSUS UNTUK PRINTER RPP02N (58mm) */
 @media print {
-    /* Sembunyikan SEMUA elemen web saat cetak */
     body * { visibility: hidden; background: white !important; }
-    .no-print { display: none !important; }
-
-    /* Hanya tampilkan iframe/konten nota yang dibuat JS */
     #print-frame { visibility: visible; position: fixed; left: 0; top: 0; width: 100%; }
 }
