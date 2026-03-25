@@ -168,7 +168,7 @@ function prosesCheckout() {
             center { text-align: center; }
             .flex { display: flex; justify-content: space-between; }
         </style></head><body>
-            <center><strong>MILKY WAVE</strong><br>Salatiga<br>--------------------------</center>
+            <center><strong>Toko Pakan Kembang Arum Salatiga</strong><br>Salatiga<br>--------------------------</center>
             ${keranjang.map(i => `<div class="flex"><span>${i.nama.substring(0,15)} x${i.qty}</span><span>${(i.harga*i.qty).toLocaleString()}</span></div>`).join('')}
             --------------------------
             <div class="flex" style="font-weight:bold"><span>TOTAL</span><span>Rp ${total.toLocaleString()}</span></div>
