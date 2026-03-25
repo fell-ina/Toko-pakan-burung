@@ -10,6 +10,6 @@
 .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
 
 @media print {
-    body * { visibility: hidden; background: white !important; }
-    #print-frame { visibility: visible; position: fixed; left: 0; top: 0; width: 100%; }
+    body * { visibility: hidden !important; }
+    #print-frame { visibility: visible !important; position: fixed; left: 0; top: 0; width: 100%; }
 }
