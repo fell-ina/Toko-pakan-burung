@@ -4,20 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milky Wave POS - Pro</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .input-style { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; font-size: 14px; transition: 0.3s; }
-        .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
-    </style>
 </head>
 <body class="bg-slate-50 transition-colors duration-300" id="appBody">
 
-    <nav class="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 border-b dark:border-slate-700">
+    <nav class="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 border-b dark:border-slate-700 no-print">
         <div class="flex justify-around items-center max-w-5xl mx-auto">
             <button onclick="openTab('tab-print')" id="btn-tab-print" class="tab-btn py-4 px-2 text-[11px] font-bold uppercase tracking-widest text-blue-600 border-b-2 border-blue-600">🛒 Kasir</button>
             <button onclick="openTab('tab-menu')" id="btn-tab-menu" class="tab-btn py-4 px-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 border-b-2 border-transparent">📦 Produk</button>
@@ -26,15 +18,17 @@
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-4 pb-24">
-        
+    <main class="max-w-5xl mx-auto p-4 pb-24 no-print">
         <div id="tab-print" class="tab-content active">
+            <div class="mb-4 space-y-3">
+                <input type="text" id="search-kasir" oninput="renderEtalase()" placeholder="Cari minuman..." class="input-style shadow-sm">
+                <div id="category-chips" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+            </div>
             <div class="flex flex-col lg:flex-row gap-6">
                 <div class="flex-1">
-                    <div id="category-chips" class="flex gap-2 overflow-x-auto mb-4 pb-2 no-scrollbar"></div>
                     <div id="grid-etalase" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-xl border dark:border-slate-700 h-fit lg:w-80 sticky top-24">
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-xl border dark:border-slate-700 h-fit lg:w-80 sticky top-40">
                     <h3 class="font-black text-sm mb-4 dark:text-white uppercase">Order</h3>
                     <div id="cart-items" class="space-y-2 mb-6 max-h-64 overflow-y-auto pr-2"></div>
                     <div class="border-t-2 border-dashed dark:border-slate-700 pt-4">
@@ -42,28 +36,31 @@
                             <span class="text-[10px] text-slate-400 self-center">TOTAL</span>
                             <span id="total-cart">Rp 0</span>
                         </div>
-                        <button onclick="prosesCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg transition active:scale-95">CETAK NOTA</button>
+                        <button onclick="prosesCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-all">CETAK NOTA</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="tab-menu" class="tab-content">
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border dark:border-slate-700 mb-8">
-                <h3 id="form-title" class="font-black text-blue-600 mb-4 uppercase">Kelola Barang</h3>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border dark:border-slate-700 mb-6">
+                <h3 id="form-title" class="font-black text-blue-600 mb-4 uppercase">Input Produk</h3>
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" id="inp-nama" placeholder="Nama Produk" class="input-style">
                     <input type="number" id="inp-harga" placeholder="Harga Jual" class="input-style">
-                    <input type="text" id="inp-kategori" placeholder="Kategori" class="input-style">
+                    <input type="text" id="inp-kategori" placeholder="Kategori (Misal: Susu, Jelly)" class="input-style">
                     <input type="file" id="inp-foto" class="text-xs text-slate-400 p-2">
                     <div class="flex gap-2 md:col-span-2">
-                        <button id="btn-simpan" onclick="simpanBarang()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">SIMPAN</button>
+                        <button id="btn-simpan" onclick="simpanBarang()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">SIMPAN PRODUK</button>
                         <button id="btn-batal" onclick="resetFormMenu()" class="hidden bg-slate-400 text-white px-6 py-3 rounded-xl font-bold">BATAL</button>
                     </div>
                 </div>
             </div>
-            <div id="menu-grouped-list" class="space-y-6"></div>
+            <div class="mb-4">
+                <input type="text" id="search-produk" oninput="renderMenu()" placeholder="Cari di daftar produk..." class="input-style shadow-sm">
+            </div>
+            <div id="menu-list" class="space-y-3"></div>
         </div>
 
         <div id="tab-history" class="tab-content">
@@ -71,14 +68,12 @@
         </div>
 
         <div id="tab-profil" class="tab-content text-center py-6">
-            <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border dark:border-slate-700 max-w-sm mx-auto">
-                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🎨</div>
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-xl border dark:border-slate-700 max-w-sm mx-auto">
                 <h2 class="text-xl font-black mb-6 dark:text-white uppercase">Tampilan</h2>
                 <div class="flex gap-2">
                     <button onclick="gantiTema('light')" class="flex-1 border p-4 rounded-2xl dark:text-white font-bold text-[10px]">☀️ TERANG</button>
                     <button onclick="gantiTema('dark')" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-bold text-[10px]">🌙 GELAP</button>
                 </div>
-                <p class="text-[9px] text-slate-400 mt-10 font-bold uppercase tracking-widest italic">Hubungkan Printer RPP02N di Aplikasi RawBT</p>
             </div>
         </div>
     </main>
