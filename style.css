@@ -1,15 +1,7 @@
-.no-scrollbar::-webkit-scrollbar { display: none; }
 .tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+.tab-content.active { display: block; }
 .input-style { 
     width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; 
-    background: #fff; font-size: 14px; transition: 0.3s; 
+    background: #fff; font-size: 14px; 
 }
 .dark .input-style { background: #1e293b; border-color: #334155; color: white; }
-
-@media print {
-    body * { visibility: hidden !important; }
-    #print-frame { visibility: visible !important; position: fixed; left: 0; top: 0; width: 100%; }
-}
