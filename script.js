@@ -3,7 +3,7 @@ let dbHistory = JSON.parse(localStorage.getItem('dbHistory')) || [];
 let keranjang = [];
 let filterKategori = 'Semua';
 
-// --- TEMA ---
+// --- TEMA & NAVIGASI ---
 function gantiTema(mode) {
     const body = document.getElementById('appBody');
     mode === 'dark' ? body.classList.add('dark') : body.classList.remove('dark');
@@ -11,7 +11,6 @@ function gantiTema(mode) {
 }
 if (localStorage.getItem('theme') === 'dark') gantiTema('dark');
 
-// --- NAVIGASI ---
 function openTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => {
@@ -20,33 +19,24 @@ function openTab(id) {
     });
     document.getElementById(id).classList.add('active');
     document.getElementById('btn-' + id).classList.add('text-blue-600', 'border-blue-600');
-    
     if(id === 'tab-print') renderEtalase();
     if(id === 'tab-menu') renderMenu();
     if(id === 'tab-history') renderHistory();
 }
 
-// --- KASIR & FILTER ---
+// --- KASIR ---
 function renderEtalase() {
     const grid = document.getElementById('grid-etalase');
     const chips = document.getElementById('category-chips');
     const search = document.getElementById('search-kasir').value.toLowerCase();
     
-    // Render Chips Kategori
     const kats = ['Semua', ...new Set(dbBarang.map(b => b.kategori || "Umum"))];
     chips.innerHTML = kats.map(k => `
-        <button onclick="setFilter('${k}')" class="px-4 py-2 rounded-full border text-[10px] font-bold whitespace-nowrap ${filterKategori === k ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-700 dark:text-white'}">
+        <button onclick="setFilter('${k}')" class="px-4 py-2 rounded-full border text-[10px] font-bold ${filterKategori === k ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-700 dark:text-white'}">
             ${k.toUpperCase()}
-        </button>
-    `).join('');
+        </button>`).join('');
 
-    // Filter Produk
-    const filtered = dbBarang.filter(b => {
-        const matchesKat = filterKategori === 'Semua' || b.kategori === filterKategori;
-        const matchesSearch = b.nama.toLowerCase().includes(search);
-        return matchesKat && matchesSearch;
-    });
-
+    const filtered = dbBarang.filter(b => (filterKategori === 'Semua' || b.kategori === filterKategori) && b.nama.toLowerCase().includes(search));
     grid.innerHTML = filtered.map(b => `
         <div onclick="tambahKeKeranjang(${b.id})" class="bg-white dark:bg-slate-800 p-2 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer active:scale-95 transition">
             <div class="h-24 bg-slate-100 dark:bg-slate-700 rounded-xl overflow-hidden mb-2">
@@ -58,50 +48,35 @@ function renderEtalase() {
 }
 
 function setFilter(k) { filterKategori = k; renderEtalase(); }
-
 function tambahKeKeranjang(id) {
     const item = dbBarang.find(b => b.id === id);
     const ada = keranjang.find(k => k.id === id);
     ada ? ada.qty++ : keranjang.push({ ...item, qty: 1 });
     renderCart();
 }
-
 function renderCart() {
     const list = document.getElementById('cart-items');
     let total = 0;
     list.innerHTML = keranjang.map((item, idx) => {
         total += (item.harga * item.qty);
-        return `<div class="flex justify-between text-[10px] dark:text-white border-b dark:border-slate-700 pb-2 items-center">
-            <span class="flex-1">${item.nama.toUpperCase()} (x${item.qty})</span>
-            <span class="mr-3 font-bold">${(item.harga * item.qty).toLocaleString()}</span>
-            <button onclick="hapusKeranjang(${idx})" class="text-red-500">✕</button>
+        return `<div class="flex justify-between text-[10px] dark:text-white border-b dark:border-slate-700 pb-2">
+            <span>${item.nama.toUpperCase()} (x${item.qty})</span>
+            <button onclick="hapusKeranjang(${idx})" class="text-red-500 font-bold ml-2">✕</button>
         </div>`;
     }).join('');
     document.getElementById('total-cart').innerText = `Rp ${total.toLocaleString()}`;
 }
-
 function hapusKeranjang(idx) { keranjang.splice(idx, 1); renderCart(); }
 
-// --- PRODUK (SEARCH, EDIT, DELETE) ---
+// --- PRODUK ---
 function renderMenu() {
-    const list = document.getElementById('menu-list');
     const search = document.getElementById('search-produk').value.toLowerCase();
-    
-    const filtered = dbBarang.filter(b => b.nama.toLowerCase().includes(search));
-
-    list.innerHTML = filtered.map(i => `
+    document.getElementById('menu-list').innerHTML = dbBarang.filter(b => b.nama.toLowerCase().includes(search)).map(i => `
         <div class="flex justify-between bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 items-center">
-            <div>
-                <p class="font-bold dark:text-white text-xs uppercase">${i.nama}</p>
-                <p class="text-[9px] text-blue-500 font-bold">Rp ${i.harga.toLocaleString()} | ${i.kategori || 'Umum'}</p>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="prepareEdit(${i.id})" class="text-amber-500 text-sm">✏️</button>
-                <button onclick="hapusMenu(${i.id})" class="text-red-500 text-sm">🗑️</button>
-            </div>
+            <div><p class="font-bold dark:text-white text-xs uppercase">${i.nama}</p><p class="text-[9px] text-blue-500">${i.kategori} | Rp ${i.harga.toLocaleString()}</p></div>
+            <div class="flex gap-4"><button onclick="prepareEdit(${i.id})" class="text-amber-500">✏️</button><button onclick="hapusMenu(${i.id})" class="text-red-500">🗑️</button></div>
         </div>`).join('');
 }
-
 function simpanBarang() {
     const nama = document.getElementById('inp-nama').value;
     const harga = parseInt(document.getElementById('inp-harga').value);
@@ -110,93 +85,85 @@ function simpanBarang() {
     const idEdit = document.getElementById('edit-id').value;
 
     if(!nama || !harga) return alert("Lengkapi data!");
-
     const action = (img) => {
         const itemData = { id: idEdit ? parseInt(idEdit) : Date.now(), nama, harga, kategori, foto: img };
-        if(idEdit) {
-            const idx = dbBarang.findIndex(b => b.id == idEdit);
-            dbBarang[idx] = itemData;
-        } else {
-            dbBarang.push(itemData);
-        }
+        idEdit ? (dbBarang[dbBarang.findIndex(b => b.id == idEdit)] = itemData) : dbBarang.push(itemData);
         localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
-        resetFormMenu(); renderMenu(); renderEtalase();
+        resetFormMenu(); renderMenu();
     };
-
-    if(fotoFile) {
-        const r = new FileReader(); r.onload = (e) => action(e.target.result); r.readAsDataURL(fotoFile);
-    } else {
-        action(idEdit ? dbBarang.find(b => b.id == idEdit).foto : null);
-    }
+    fotoFile ? (new FileReader().onload = (e) => action(e.target.result), new FileReader().readAsDataURL(fotoFile)) : action(idEdit ? dbBarang.find(b => b.id == idEdit).foto : null);
 }
-
 function prepareEdit(id) {
     const item = dbBarang.find(b => b.id === id);
     document.getElementById('edit-id').value = item.id;
     document.getElementById('inp-nama').value = item.nama;
     document.getElementById('inp-harga').value = item.harga;
     document.getElementById('inp-kategori').value = item.kategori;
-    document.getElementById('btn-simpan').innerText = "UPDATE PRODUK";
+    document.getElementById('btn-simpan').innerText = "UPDATE";
     document.getElementById('btn-batal').classList.remove('hidden');
-    window.scrollTo(0, 0);
 }
-
 function resetFormMenu() {
-    document.getElementById('edit-id').value = '';
-    document.getElementById('inp-nama').value = '';
-    document.getElementById('inp-harga').value = '';
-    document.getElementById('inp-kategori').value = '';
-    document.getElementById('btn-simpan').innerText = "SIMPAN PRODUK";
-    document.getElementById('btn-batal').classList.add('hidden');
+    document.getElementById('edit-id').value = ''; document.getElementById('inp-nama').value = '';
+    document.getElementById('inp-harga').value = ''; document.getElementById('inp-kategori').value = '';
+    document.getElementById('btn-simpan').innerText = "SIMPAN"; document.getElementById('btn-batal').classList.add('hidden');
 }
+function hapusMenu(id) { if(confirm("Hapus produk?")) { dbBarang = dbBarang.filter(b => b.id !== id); localStorage.setItem('dbBarang', JSON.stringify(dbBarang)); renderMenu(); } }
 
-function hapusMenu(id) {
-    if(confirm("Hapus produk ini?")) {
-        dbBarang = dbBarang.filter(b => b.id !== id);
-        localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
-        renderMenu(); renderEtalase();
+// --- RIWAYAT (MENAMPILKAN DETAIL PRODUK & HARGA) ---
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    if (dbHistory.length === 0) {
+        historyList.innerHTML = '<p class="text-center text-slate-400 text-xs italic">Belum ada riwayat transaksi.</p>';
+        return;
     }
+
+    historyList.innerHTML = dbHistory.slice().reverse().map(h => `
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 shadow-sm">
+            <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2 mb-2">
+                <span class="text-[10px] text-blue-600 font-black">${h.waktu}</span>
+                <span class="text-xs font-black dark:text-white">TOTAL: Rp ${h.total.toLocaleString()}</span>
+            </div>
+            <div class="space-y-1">
+                ${h.items.map(i => `
+                    <div class="flex justify-between text-[10px] text-slate-600 dark:text-slate-300">
+                        <span>${i.nama.toUpperCase()} (Rp ${i.harga.toLocaleString()} x ${i.qty})</span>
+                        <span class="font-bold text-slate-800 dark:text-white">Rp ${(i.harga * i.qty).toLocaleString()}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`).join('');
 }
 
-// --- CETAK NOTA (RAWBT COMPATIBLE) ---
+// --- PRINT & CHECKOUT ---
 function prosesCheckout() {
-    if(keranjang.length === 0) return;
+    if(keranjang.length === 0) return alert("Keranjang kosong!");
     const total = keranjang.reduce((a, b) => a + (b.harga * b.qty), 0);
-    const notaHTML = `
-        <html><head><style>
-            body { width: 48mm; font-family: monospace; font-size: 9pt; padding: 0; margin: 0; }
-            center { text-align: center; }
-            .flex { display: flex; justify-content: space-between; }
-        </style></head><body>
-            <center><strong>Toko Pakan Kembang Arum Salatiga</strong><br>Salatiga<br>--------------------------</center>
-            ${keranjang.map(i => `<div class="flex"><span>${i.nama.substring(0,15)} x${i.qty}</span><span>${(i.harga*i.qty).toLocaleString()}</span></div>`).join('')}
-            --------------------------
-            <div class="flex" style="font-weight:bold"><span>TOTAL</span><span>Rp ${total.toLocaleString()}</span></div>
-            <center><br>Terima Kasih!<br><br><br></center>
-        </body></html>`;
+    const waktu = new Date().toLocaleString('id-ID');
+
+    const notaHTML = `<html><head><style>body { width: 48mm; font-family: monospace; font-size: 9pt; } .flex { display: flex; justify-content: space-between; } center { text-align: center; }</style></head><body>
+        <center><strong>TOKO PAKAN BURUNG KEMBANG ARUM</strong><br>Salatiga<br>${waktu}<br>--------------------------</center>
+        ${keranjang.map(i => `<div class="flex"><span>${i.nama.substring(0,12)} x${i.qty}</span><span>${(i.harga*i.qty).toLocaleString()}</span></div>`).join('')}
+        --------------------------
+        <div class="flex" style="font-weight:bold"><span>TOTAL</span><span>Rp ${total.toLocaleString()}</span></div>
+        <center><br>Terima Kasih!</center></body></html>`;
 
     const iframe = document.createElement('iframe');
-    iframe.id = 'print-frame';
-    document.body.appendChild(iframe);
+    iframe.id = 'print-frame'; document.body.appendChild(iframe);
     const doc = iframe.contentWindow.document;
     doc.open(); doc.write(notaHTML); doc.close();
 
     setTimeout(() => {
-        iframe.contentWindow.focus();
         iframe.contentWindow.print();
-        dbHistory.push({ waktu: new Date().toLocaleString(), total });
+        // Simpan ke riwayat dengan detail barang
+        dbHistory.push({ 
+            waktu: waktu, 
+            total: total, 
+            items: keranjang.map(i => ({ nama: i.nama, harga: i.harga, qty: i.qty })) 
+        });
         localStorage.setItem('dbHistory', JSON.stringify(dbHistory));
         keranjang = []; renderCart();
         setTimeout(() => document.body.removeChild(iframe), 1000);
     }, 500);
-}
-
-function renderHistory() {
-    document.getElementById('history-list').innerHTML = dbHistory.slice().reverse().map(h => `
-        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex justify-between">
-            <span class="text-[10px] dark:text-white font-bold">${h.waktu}</span>
-            <span class="text-blue-500 font-bold text-xs">Rp ${h.total.toLocaleString()}</span>
-        </div>`).join('');
 }
 
 renderEtalase();
